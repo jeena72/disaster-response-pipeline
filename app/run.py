@@ -39,18 +39,25 @@ model = joblib.load("../models/classifier.pkl")
 def index():
 
     # extract data needed for visuals
-    # TODO: Below is an example - modify to extract data for your own visuals
-    genre_counts = df.groupby('genre').count()['message']
+    # for plot-1
+    genre_counts = df.groupby('genre').count()['message'].sort_values(ascending=False)
     genre_names = list(genre_counts.index)
+    # for plot-2
+    labels_data = df[[col for col in df.columns.tolist() if col not in ["id", "message", "original", "genre"]]]
+    imbalance_df = pd.concat([pd.Series(labels_data.mean(), name="1"), pd.Series(1 - labels_data.mean(), name="0")], axis=1)
+    imbalance_df.sort_values(by=["1"], inplace=True)
+    message_categories_list = imbalance_df.index.tolist()
+    ones_count_normalized = imbalance_df["1"]
+    zeros_count_normalized = imbalance_df["0"]
 
     # create visuals
-    # TODO: Below is an example - modify to create your own visuals
     graphs = [
         {
             'data': [
                 Bar(
                     x=genre_names,
-                    y=genre_counts
+                    y=genre_counts,
+                    width=0.5
                 )
             ],
 
@@ -62,6 +69,38 @@ def index():
                 'xaxis': {
                     'title': "Genre"
                 }
+            }
+        },
+        {
+            'data': [
+                Bar(
+                    x=ones_count_normalized,
+                    y=message_categories_list,
+                    name="1 - category present",
+                    orientation="h",
+                    width=0.9
+                ),
+                Bar(
+                    x=zeros_count_normalized,
+                    y=message_categories_list,
+                    name="0 - category absent",
+                    orientation="h",
+                    width=0.9
+                )
+            ],
+
+            'layout': {
+                'title': 'Data imbalance distribution, Total messages: {}'.format(labels_data.shape[0]),
+                'yaxis': {
+                    'title': "Message category"
+                },
+                'xaxis': {
+                    'title': "Fraction"
+                },
+                'barmode': "stack",
+                'automargin': "False",
+                'height':650,
+                'margin':dict(l=160, r=60, t=60, b=55)
             }
         }
     ]
