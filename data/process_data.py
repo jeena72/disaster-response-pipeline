@@ -5,7 +5,6 @@ from sqlalchemy import create_engine
 
 def load_data(messages_filepath, categories_filepath):
     """
-    
     Load and merge messages and categories datasets
     
     Parameters
@@ -89,6 +88,11 @@ def save_data(df, database_filename):
 def main():
     """
     Runner function
+    
+    This function:
+        1) Loads and merge datasets
+        2) Cleans and pre-process data
+        3) Save data in SQLite database
     """
     if len(sys.argv) == 4:
 

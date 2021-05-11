@@ -18,6 +18,23 @@ from sklearn.metrics import classification_report
 
 
 def load_data(database_filepath):
+    """
+    Load and generate datasets for fitting along with message categories list
+    
+    Parameters
+    -----------
+    database_filepath : str
+        SQLite database file path
+    
+    Returns
+    ----------
+    X : DataFrame
+        Contains messages for generating features
+    Y : DataFrame
+        Contains binary labels for various message categories
+    category_names : list
+        List of different message categories
+    """
     engine = create_engine('sqlite:///' + database_filepath)
     df = pd.read_sql_table("DisasterResponseData", con=engine)
     X = df["message"]
@@ -27,6 +44,19 @@ def load_data(database_filepath):
 
 
 def tokenize(text):
+    """
+    Passed string is normalized, lemmatized, and tokenized
+    
+    Parameters
+    -----------
+    text : str
+        text to be tokenized
+    
+    Returns
+    ----------
+    clean_tokens : list
+        Contains generated tokens
+    """
     tokens = word_tokenize(text)
     lemmatizer = WordNetLemmatizer()
     clean_tokens = []
@@ -37,6 +67,18 @@ def tokenize(text):
 
 
 def build_model():
+    """
+    Creates scikit Pipeline object for processing text messages and fitting a classifier.
+    
+    Parameters
+    -----------
+    None
+    
+    Returns
+    ----------
+    pipeline : Pipeline
+        Pipeline object
+    """
     pipeline = Pipeline([("features",
                       TfidfVectorizer(tokenizer=tokenize)),
                     ("clf", MultiOutputClassifier(LogisticRegression()))])
@@ -44,15 +86,56 @@ def build_model():
 
 
 def evaluate_model(model, X_test, Y_test, category_names):
+    """
+    Method applies scikit pipeline to test set and prints the model performance (accuracy and f1score)
+    
+    Parameters
+    -----------
+    model : Pipeline
+        fit pipeline
+    X_test : ndarray
+        test features
+    Y_test : ndarray
+        test labels
+    category_names : list
+        List of different message categories
+    
+    Returns
+    ----------
+    None
+    """
     Y_pred = model.predict(X_test)
     print(classification_report(Y_test, Y_pred, target_names=category_names))
 
 
 def save_model(model, model_filepath):
+    """
+    Save trained model
+    
+    Parameters
+    -----------
+    model : Pipeline
+        fit pipeline
+    model_filepath : str
+        path with dump format
+    
+    Returns
+    ----------
+    None
+    """
     dump(model, "{}".format(model_filepath))
 
 
 def main():
+    """
+    Runner function
+    
+    This function:
+        1) Extract data from SQLite db
+        2) Train ML model on training set
+        3) Estimate model performance on test set
+        4) Save trained model
+    """
     if len(sys.argv) == 3:
         database_filepath, model_filepath = sys.argv[1:]
         print('Loading data...\n    DATABASE: {}'.format(database_filepath))
