@@ -2,20 +2,24 @@ import sys
 import pandas as pd
 import numpy as np
 import nltk
+
 from joblib import dump
 from sqlalchemy import create_engine
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
-nltk.download('punkt')
-nltk.download('wordnet')
+
 from sklearn.pipeline import Pipeline, FeatureUnion
-from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report
+from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.preprocessing import StandardScaler
 
+nltk.download('punkt')
+nltk.download('wordnet')
+nltk.download('averaged_perceptron_tagger')
 
 def load_data(database_filepath):
     """
@@ -66,6 +70,27 @@ def tokenize(text):
     return clean_tokens
 
 
+class StartingVerbExtractor(BaseEstimator, TransformerMixin):
+    """
+    This transformer class extract the starting verb of a sentence
+    """
+    def starting_verb(self, text):
+        sentence_list = nltk.sent_tokenize(text)
+        for sentence in sentence_list:
+            pos_tags = nltk.pos_tag(tokenize(sentence))
+            first_word, first_tag = pos_tags[0]
+            if first_tag in ['VB', 'VBP'] or first_word == 'RT':
+                return True
+        return False
+
+    def fit(self, X, y=None):
+        return self
+
+    def transform(self, X):
+        X_tagged = pd.Series(X).apply(self.starting_verb)
+        return pd.DataFrame(X_tagged)
+
+
 def build_model():
     """
     Creates scikit Pipeline object for processing text messages and fitting a classifier.
@@ -79,9 +104,17 @@ def build_model():
     pipeline : Pipeline
         Pipeline object
     """
-    pipeline = Pipeline([("features",
-                      TfidfVectorizer(tokenizer=tokenize)),
-                    ("clf", MultiOutputClassifier(LogisticRegression()))])
+    pipeline = Pipeline([
+                    ("features", FeatureUnion([
+                        ('text_pipeline', Pipeline([
+                            ('count_vectorizer', CountVectorizer(tokenizer=tokenize)),
+                            ('scaler', StandardScaler(with_mean=False))
+                            ])),
+                        ('tfidf_transformer', TfidfVectorizer()),
+                        ('starting_verb_extr', StartingVerbExtractor())
+                        ])),
+                    ("clf", MultiOutputClassifier(RandomForestClassifier()))
+                    ])
     return pipeline
 
 
