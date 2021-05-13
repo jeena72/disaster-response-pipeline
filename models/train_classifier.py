@@ -8,18 +8,21 @@ from sqlalchemy import create_engine
 from nltk.tokenize import word_tokenize
 from nltk.stem import WordNetLemmatizer
 
-from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.feature_extraction.text import TfidfVectorizer, CountVectorizer
-from sklearn.multioutput import MultiOutputClassifier
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.model_selection import train_test_split
+from sklearn.pipeline import Pipeline, FeatureUnion
 from sklearn.preprocessing import StandardScaler
+from sklearn.ensemble import AdaBoostClassifier
+from sklearn.linear_model import LogisticRegression
+from sklearn.multioutput import MultiOutputClassifier
+from sklearn.model_selection import GridSearchCV
+from sklearn.metrics import classification_report
 
 nltk.download('punkt')
 nltk.download('wordnet')
 nltk.download('averaged_perceptron_tagger')
+
 
 def load_data(database_filepath):
     """
@@ -91,13 +94,14 @@ class StartingVerbExtractor(BaseEstimator, TransformerMixin):
         return pd.DataFrame(X_tagged)
 
 
-def build_model():
+def build_model(useGridSearch=False):
     """
     Creates scikit Pipeline object for processing text messages and fitting a classifier.
     
     Parameters
     -----------
-    None
+    useGridSearch: bool
+        If grid search be used for model training
     
     Returns
     ----------
@@ -113,10 +117,20 @@ def build_model():
                         ('tfidf_transformer', TfidfVectorizer()),
                         ('starting_verb_extr', StartingVerbExtractor())
                         ])),
-                    ("clf", MultiOutputClassifier(RandomForestClassifier()))
-                    ])
+                    ("clf", MultiOutputClassifier(AdaBoostClassifier()))
+               ])
+    if useGridSearch:
+        parameters = {
+            'features__text_pipeline__count_vectorizer__max_df': (0.5, 1.0),
+            'features__tfidf_transformer__use_idf': (True, False),
+            'features__transformer_weights': (
+                {'text_pipeline': 1, 'tfidf_transformer': 1, 'starting_verb': 1},
+                {'text_pipeline': 0.5, 'tfidf_transformer': 1, 'starting_verb': 0.5},
+            )
+        }
+        cv = GridSearchCV(pipeline, param_grid=parameters, cv=3, verbose=2.1)
+        return cv
     return pipeline
-
 
 def evaluate_model(model, X_test, Y_test, category_names):
     """
