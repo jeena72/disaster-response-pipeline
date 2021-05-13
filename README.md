@@ -1,6 +1,6 @@
 # Disaster Response Pipeline
 
-![Intro Pic](screenshots/homepage.png)
+![Intro Pic](screenshots/homepage.PNG)
 
 ## Table of Contents
 1. [Description](#description)
@@ -76,8 +76,8 @@ git clone https://github.com/jeena72/disaster-response-pipeline.git
 
 2. Web app home page with some visualization of distributions in dataset
 
-![Main Page](screenshots/homepageFull.png)
+![Main Page](screenshots/homepageFull.PNG)
 
 3. Sample run of train_classifier.py with precision, recall etc. for each category
 
-![Train Classifier with Category Level Precision Recall](screenshots/trainingClassificationReport.png)
+![Train Classifier with Category Level Precision Recall](screenshots/trainingClassificationReport.PNG)
