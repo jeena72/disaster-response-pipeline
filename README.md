@@ -46,8 +46,8 @@ git clone https://github.com/jeena72/disaster-response-pipeline.git
     - To run the ML pipeline that loads data from DB, trains classifier and saves the classifier as a pickle file
         `python models/train_classifier.py data/DisasterResponse.db models/classifier.pkl`
 
-2. Run the following command to run web app
-    `python app/run.py`
+2. Run the following command **from inside "app/" directory** to run web app
+    <br>`python run.py`
 
 3. Go to http://127.0.0.1:3001/
 
